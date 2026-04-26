@@ -1,0 +1,6 @@
+node_modules/
+apps/*/node_modules/
+apps/*/dist/
+apps/api/storage/scans/
+apps/desktop/release/
+pnpm-debug.log*

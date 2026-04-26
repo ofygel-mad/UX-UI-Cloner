@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' 'unsafe-inline' data: http://127.0.0.1:* http://localhost:* https:; img-src 'self' data: http://127.0.0.1:* http://localhost:* https:; connect-src 'self' http://127.0.0.1:* http://localhost:* https:; frame-src *; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frontend Capture Browser</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="left-rail">
+        <div class="brand-card">
+          <p class="eyebrow">Desktop Shell</p>
+          <h1>Frontend Capture Browser</h1>
+          <p class="brand-copy">
+            Native operator workspace with tabs, embedded browsing, capture jobs,
+            persistent scan history, built-in artifact viewers, and exportable reports.
+          </p>
+        </div>
+
+        <section class="panel">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">Runtime</p>
+              <h2>Session</h2>
+            </div>
+            <span id="runtime-badge" class="badge">boot</span>
+          </div>
+
+          <label class="field">
+            <span>Embedded API</span>
+            <input id="api-base-input" type="text" readonly />
+          </label>
+
+          <label class="field">
+            <span>Current target URL</span>
+            <input id="capture-url-input" type="text" placeholder="https://example.com" />
+          </label>
+
+          <div class="grid-two">
+            <label class="field">
+              <span>Safe actions</span>
+              <input id="safe-actions-input" type="number" min="0" max="50" value="20" />
+            </label>
+
+            <label class="field">
+              <span>Timeout ms</span>
+              <input id="timeout-input" type="number" min="5000" max="120000" step="1000" value="45000" />
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button id="capture-button" class="primary-button">Capture active tab</button>
+            <button id="refresh-scans-button" class="ghost-button">Refresh scans</button>
+          </div>
+
+          <div id="job-status-card" class="job-card hidden"></div>
+        </section>
+
+        <section class="panel scans-panel">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">History</p>
+              <h2>Saved scans</h2>
+            </div>
+            <span id="scan-count-badge" class="badge">0</span>
+          </div>
+
+          <div id="scan-list" class="scan-list"></div>
+        </section>
+      </aside>
+
+      <main class="main-stage">
+        <section class="browser-shell panel">
+          <div class="tab-strip">
+            <div id="tab-list" class="tab-list"></div>
+            <button id="new-tab-button" class="circle-button">+</button>
+          </div>
+
+          <div class="nav-bar">
+            <button id="back-button" class="nav-button">Back</button>
+            <button id="forward-button" class="nav-button">Next</button>
+            <button id="reload-button" class="nav-button">Reload</button>
+            <input id="address-input" class="address-input" type="text" placeholder="https://example.com" />
+            <button id="go-button" class="primary-button compact">Go</button>
+          </div>
+
+          <div id="browser-stack" class="browser-stack"></div>
+        </section>
+
+        <section class="analysis-grid">
+          <section class="panel detail-panel">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Selected Scan</p>
+                <h2 id="scan-title">No scan selected</h2>
+              </div>
+              <div class="inline-actions">
+                <button id="download-zip-button" class="ghost-button" disabled>ZIP</button>
+                <button id="open-scan-button" class="ghost-button" disabled>Result JSON</button>
+                <button id="export-report-button" class="ghost-button" disabled>Export report</button>
+              </div>
+            </div>
+
+            <div id="summary-metrics" class="metrics-grid metrics-grid-empty">
+              <p class="muted">Pick a saved scan or run a new capture from the active tab.</p>
+            </div>
+
+            <div id="screenshots-grid" class="screenshots-grid"></div>
+          </section>
+
+          <section class="panel resources-panel">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Resources</p>
+                <h2>Captured files</h2>
+              </div>
+            </div>
+
+            <div class="resource-filters">
+              <input id="resource-search-input" type="text" placeholder="Search by URL, mime, or path" />
+              <select id="resource-kind-select">
+                <option value="all">All kinds</option>
+              </select>
+            </div>
+
+            <div id="resource-list" class="resource-list"></div>
+          </section>
+
+          <section class="panel inspector-panel">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Inspector</p>
+                <h2 id="resource-title">No resource selected</h2>
+              </div>
+              <div class="inline-actions">
+                <button id="open-resource-button" class="ghost-button" disabled>Original</button>
+                <button id="open-pretty-button" class="ghost-button" disabled>Pretty</button>
+              </div>
+            </div>
+
+            <div id="resource-meta" class="resource-meta"></div>
+            <div id="resource-preview" class="resource-preview empty-preview">
+              Choose a resource to inspect its content.
+            </div>
+          </section>
+
+          <section class="panel artifact-panel">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Artifacts</p>
+                <h2>Built-in viewers</h2>
+              </div>
+              <button id="open-artifact-button" class="ghost-button" disabled>Open raw</button>
+            </div>
+
+            <div id="artifact-tab-list" class="artifact-tab-list"></div>
+            <pre id="artifact-preview" class="artifact-preview">Select a scan to load DOM, console, network, cookies, storage, and manifest artifacts.</pre>
+          </section>
+
+          <section class="panel auxiliary-panel">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Signals</p>
+                <h2>Errors and interactions</h2>
+              </div>
+            </div>
+
+            <div class="aux-columns">
+              <div>
+                <h3>Network errors</h3>
+                <div id="network-error-list" class="mini-list"></div>
+              </div>
+
+              <div>
+                <h3>Interactions</h3>
+                <div id="interaction-list" class="mini-list"></div>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./renderer.js"></script>
+  </body>
+  </html>
