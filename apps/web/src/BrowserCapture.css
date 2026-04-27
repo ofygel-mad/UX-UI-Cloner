@@ -1,0 +1,267 @@
+.browser-capture {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #0d0d0d;
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Address Bar */
+.address-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #141414;
+  border-bottom: 1px solid #222;
+  flex-shrink: 0;
+  height: 42px;
+}
+
+.status-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+}
+
+.address-input {
+  flex: 1;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: #e0e0e0;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+}
+
+.address-input::placeholder {
+  color: #555;
+}
+
+.address-input:focus {
+  outline: none;
+  border-color: #4ade80;
+  background: #1a1a1a;
+}
+
+.capture-btn {
+  padding: 6px 12px;
+  background: #1a4a2e;
+  border: 1px solid #2d7a4a;
+  border-radius: 4px;
+  color: #4ade80;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.capture-btn:hover:not(:disabled) {
+  background: #2d7a4a;
+  border-color: #4ade80;
+}
+
+.capture-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Viewport */
+.viewport {
+  flex: 1;
+  background: #1a1a1a;
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewport-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.viewport-placeholder {
+  color: #555;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.05em;
+}
+
+/* Tabs Bar */
+.tabs-bar {
+  display: flex;
+  gap: 0;
+  padding: 0 12px;
+  background: #111;
+  border-top: 1px solid #222;
+  border-bottom: 1px solid #1a1a1a;
+  flex-shrink: 0;
+}
+
+.tab {
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #888;
+}
+
+.tab.active {
+  color: #4ade80;
+  border-bottom-color: #4ade80;
+}
+
+/* Toolbar */
+.toolbar {
+  background: #111;
+  padding: 12px;
+  flex-shrink: 0;
+  max-height: 140px;
+  overflow-y: auto;
+  border-top: 1px solid #222;
+}
+
+.toolbar-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: center;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 10px;
+  color: #555;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.field-value {
+  font-size: 12px;
+  color: #aaa;
+  font-family: 'Courier New', monospace;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  padding: 4px 8px;
+}
+
+.search-field {
+  padding: 8px 10px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  color: #aaa;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+}
+
+.search-field::placeholder {
+  color: #555;
+}
+
+.search-field:focus {
+  outline: none;
+  border-color: #4ade80;
+}
+
+.filter-select {
+  padding: 8px 10px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  color: #aaa;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #4ade80;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.action-btn {
+  padding: 6px 10px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  color: #888;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  color: #aaa;
+  border-color: #4ade80;
+}
+
+.history-empty,
+.inspector-empty {
+  color: #555;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+}
+
+/* Status Bar */
+.status-bar {
+  display: flex;
+  gap: 20px;
+  padding: 8px 12px;
+  background: #0d1a11;
+  border-top: 1px solid #1a2e1f;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  color: #555;
+  flex-shrink: 0;
+}
+
+.status-bar strong {
+  color: #4ade80;
+}
+
+.status-idle {
+  color: #4ade80;
+}
+
+.status-complete {
+  color: #4ade80;
+}
+
+.status-error {
+  color: #ff6b6b;
+}

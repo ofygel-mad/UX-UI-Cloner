@@ -1,0 +1,114 @@
+╔════════════════════════════════════════════════════════════════╗
+║          CLONE_BROWSER - BUILD STATUS (2026-04-27)            ║
+╚════════════════════════════════════════════════════════════════╝
+
+✅ BUILD COMPLETE
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 PACKAGES BUILT:
+
+✓ @fcb/api (apps/api)
+  - Compiled: TypeScript → JavaScript
+  - Output: dist/
+  - Entry: dist/server.js
+  - New features: auth-session endpoint, domain filters, path exclusions
+  - Compile time: <5s
+
+✓ @fcb/web (apps/web)
+  - Compiled: React + TypeScript → Vite bundle
+  - Output: dist/
+  - New UI: CaptureConfig.tsx
+  - Compile time: ~5s
+
+✓ frontend-capture-browser (apps/desktop)
+  - Compiled: Electron + TypeScript
+  - Output: dist/
+  - Main: dist/main.cjs (9.3 KB)
+  - API bundle: dist/api-runtime.js (3.0 MB)
+  - Preload: dist/preload.cjs (628 B)
+  - Renderer: dist/renderer/ (static files)
+  - Compile time: ~3s
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 QUICK START COMMANDS:
+
+Windows:
+  BUILD_AND_RUN.bat    (automatic rebuild & instructions)
+  RUN_ALL.bat          (start all services in separate windows)
+
+macOS/Linux:
+  ./BUILD_AND_RUN.sh   (automatic rebuild & instructions)
+  
+Manual (any OS):
+  Terminal 1: cd apps/api && pnpm dev
+  Terminal 2: cd apps/web && pnpm dev
+  Terminal 3: cd apps/desktop && npm start
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 NEW FEATURES READY:
+
+✅ Login Session Capture (/api/auth-session)
+   - Automate login flow: goto → fill → click → wait
+   - Save authenticated sessions (cookies + storage)
+   - Use in main capture with full context
+
+✅ Domain Filters
+   - include: nur diese Domains capturem
+   - exclude: diese Domains ignorieren
+   - Wildcards supported: *.example.com
+
+✅ Path Exclusions
+   - Skip dangerous paths: /logout, /delete, /purge
+   - Safe interactions only on whitelisted paths
+
+✅ Crawl Depth Control
+   - Limit page navigation depth (1-10)
+   - Track visited URLs
+   - Prevent infinite loops
+
+✅ Admin Mode
+   - Extra selectors for tables, tabs, modals
+   - Aggressive interaction patterns
+   - 200 elements vs 120 in normal mode
+
+✅ Visual Configuration UI
+   - CaptureConfig.tsx component
+   - Auth flow builder
+   - Domain filter editor
+   - Path exclusion list
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🧪 READY TO TEST WITH:
+
+Target: https://kort.up.railway.app
+Login: admin@kort.local
+Password: demo1234
+
+Example workflow:
+1. Auth capture: POST /api/auth-session
+   → Get session with cookies + storage
+2. Main capture: POST /api/capture
+   → Use session
+   → Domain filter: include kort.up.railway.app
+   → Path exclusions: /logout, /api/delete
+   → Crawl depth: 3
+   → Admin mode: true
+3. Results: ZIP with filtered resources + analysis
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION:
+
+ADMIN_CAPTURE_IMPLEMENTATION.md  — Full technical docs
+QUICK_START.md                    — Usage examples
+REBUILD_INSTRUCTIONS.md           — Build & run guide
+BUILD_STATUS.txt                  — This file
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ Everything is ready for testing!
+

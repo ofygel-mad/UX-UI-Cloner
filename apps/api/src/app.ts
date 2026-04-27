@@ -5,6 +5,8 @@ import staticPlugin from "@fastify/static";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { captureSite } from "./capture/captureSite.js";
+import { captureLoginSession, type LoginAction } from "./capture/loginCapture.js";
+import type { ImportedSessionSnapshot } from "./capture/types.js";
 import { listStoredScans, loadStoredScan, resolveZipPath } from "./utils/scans.js";
 
 export type CaptureJob = {
@@ -13,6 +15,11 @@ export type CaptureJob = {
   url: string;
   maxActionsPerPage: number;
   timeoutMs: number;
+  session?: ImportedSessionSnapshot;
+  domainFilter?: { include?: string[]; exclude?: string[] };
+  pathExclusions?: string[];
+  crawlDepth?: number;
+  adminMode?: boolean;
   createdAt: string;
   startedAt?: string;
   finishedAt?: string;
@@ -39,7 +46,33 @@ export function buildApiApp(): FastifyInstance {
   const CaptureBody = z.object({
     url: z.string().url(),
     maxActionsPerPage: z.number().int().min(0).max(50).optional(),
-    timeoutMs: z.number().int().min(5000).max(120000).optional()
+    timeoutMs: z.number().int().min(5000).max(120000).optional(),
+    session: z.object({
+      sourceUrl: z.string().url(),
+      userAgent: z.string().min(1).optional(),
+      cookies: z.array(z.object({
+        name: z.string().min(1),
+        value: z.string(),
+        domain: z.string().min(1),
+        path: z.string().min(1),
+        expires: z.number().optional(),
+        httpOnly: z.boolean().optional(),
+        secure: z.boolean().optional(),
+        sameSite: z.enum(["Strict", "Lax", "None"]).optional()
+      })).optional(),
+      storages: z.array(z.object({
+        origin: z.string().url(),
+        localStorage: z.record(z.string(), z.string()).optional(),
+        sessionStorage: z.record(z.string(), z.string()).optional()
+      })).optional()
+    }).optional(),
+    domainFilter: z.object({
+      include: z.array(z.string()).optional(),
+      exclude: z.array(z.string()).optional()
+    }).optional(),
+    pathExclusions: z.array(z.string()).optional(),
+    crawlDepth: z.number().int().min(1).max(10).optional(),
+    adminMode: z.boolean().optional()
   });
 
   const jobs = new Map<string, CaptureJob>();
@@ -67,7 +100,12 @@ export function buildApiApp(): FastifyInstance {
       const result = await captureSite({
         url: job.url,
         maxActionsPerPage: job.maxActionsPerPage,
-        timeoutMs: job.timeoutMs
+        timeoutMs: job.timeoutMs,
+        session: job.session,
+        domainFilter: job.domainFilter,
+        pathExclusions: job.pathExclusions,
+        crawlDepth: job.crawlDepth,
+        adminMode: job.adminMode
       });
 
       job.status = "completed";
@@ -123,6 +161,34 @@ export function buildApiApp(): FastifyInstance {
       timeoutMs: parsed.data.timeoutMs ?? 45000,
       createdAt: new Date().toISOString()
     };
+
+    if (parsed.data.session) {
+      Object.assign(job, {
+        session: {
+          sourceUrl: parsed.data.session.sourceUrl,
+          userAgent: parsed.data.session.userAgent,
+          cookies: parsed.data.session.cookies ?? [],
+          storages: (parsed.data.session.storages ?? []).map((bucket) => ({
+            origin: bucket.origin,
+            localStorage: bucket.localStorage ?? {},
+            sessionStorage: bucket.sessionStorage ?? {}
+          }))
+        }
+      });
+    }
+
+    if (parsed.data.domainFilter) {
+      job.domainFilter = parsed.data.domainFilter;
+    }
+    if (parsed.data.pathExclusions) {
+      job.pathExclusions = parsed.data.pathExclusions;
+    }
+    if (parsed.data.crawlDepth) {
+      job.crawlDepth = parsed.data.crawlDepth;
+    }
+    if (parsed.data.adminMode) {
+      job.adminMode = parsed.data.adminMode;
+    }
 
     jobs.set(jobId, job);
     jobQueue.push(jobId);
@@ -260,6 +326,42 @@ export function buildApiApp(): FastifyInstance {
       .header("Content-Type", "application/zip")
       .header("Content-Disposition", `attachment; filename="${result.scanId}.zip"`)
       .sendFile(path.basename(zipPath), path.dirname(zipPath));
+  });
+
+  app.post("/api/auth-session", async (request, reply) => {
+    const LoginActionSchema = z.discriminatedUnion("type", [
+      z.object({ type: z.literal("goto"), url: z.string().url() }),
+      z.object({ type: z.literal("fill"), selector: z.string(), value: z.string() }),
+      z.object({ type: z.literal("click"), selector: z.string(), waitMs: z.number().optional() }),
+      z.object({ type: z.literal("wait"), selector: z.string(), timeoutMs: z.number().optional() }),
+      z.object({ type: z.literal("screenshot"), path: z.string().optional() })
+    ]);
+
+    const AuthSessionBody = z.object({
+      actions: z.array(LoginActionSchema),
+      timeoutMs: z.number().int().min(5000).max(120000).optional()
+    });
+
+    const parsed = AuthSessionBody.safeParse(request.body);
+
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: "Invalid request body",
+        details: parsed.error.flatten()
+      });
+    }
+
+    try {
+      const session = await captureLoginSession(
+        parsed.data.actions as LoginAction[],
+        parsed.data.timeoutMs || 60000
+      );
+      return session;
+    } catch (error) {
+      return reply.status(500).send({
+        error: error instanceof Error ? error.message : "Failed to capture login session"
+      });
+    }
   });
 
   return app;

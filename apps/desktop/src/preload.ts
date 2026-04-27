@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import type { ImportedSessionSnapshot } from "../../api/src/capture/types.ts";
 
 contextBridge.exposeInMainWorld("desktopAPI", {
   getRuntimeInfo: async () => {
@@ -13,6 +14,12 @@ contextBridge.exposeInMainWorld("desktopAPI", {
     title?: string;
   }) => {
     return ipcRenderer.invoke("desktop:save-text-file", options);
+  },
+  extractTabSession: async (options: {
+    webContentsId: number;
+    sourceUrl: string;
+  }): Promise<ImportedSessionSnapshot> => {
+    return ipcRenderer.invoke("desktop:extract-tab-session", options);
   }
 });
 
@@ -31,6 +38,10 @@ declare global {
         content: string;
         title?: string;
       }) => Promise<string | null>;
+      extractTabSession: (options: {
+        webContentsId: number;
+        sourceUrl: string;
+      }) => Promise<ImportedSessionSnapshot>;
     };
   }
 }

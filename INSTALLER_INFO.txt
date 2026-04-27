@@ -1,0 +1,96 @@
+╔══════════════════════════════════════════════════════════════════╗
+║       FRONTEND CAPTURE BROWSER - INSTALLER READY                 ║
+║                     Version 0.1.0                                ║
+╚══════════════════════════════════════════════════════════════════╝
+
+✅ INSTALLER SUCCESSFULLY BUILT
+
+📦 File Location:
+   apps/desktop/release/Frontend Capture Browser-Setup-0.1.0-x64.exe
+
+📊 File Size: 207 MB
+   (Includes embedded Chromium + API + Web UI)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 HOW TO USE:
+
+1. Download the .exe file from above location
+2. Run: Frontend Capture Browser-Setup-0.1.0-x64.exe
+3. Follow NSIS installer wizard:
+   - Choose installation directory
+   - Create desktop shortcut (optional)
+   - Create Start Menu shortcut (optional)
+4. Launch the app
+   - Desktop shortcut, or
+   - Start Menu → Frontend Capture Browser
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ WHAT'S INCLUDED:
+
+✓ Electron v30.5.1
+✓ Chromium (embedded via Playwright)
+✓ API Server (Fastify + Playwright)
+✓ Web UI (React + Vite)
+✓ All new admin capture features:
+  - Login session capture (/api/auth-session)
+  - Domain filters (include/exclude)
+  - Path exclusions (/logout, /delete, etc)
+  - Crawl depth control (1-10 pages)
+  - Admin mode (aggressive selectors)
+  - Visual configuration UI
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📍 FIRST TIME SETUP:
+
+When you launch the app:
+1. API server starts in background (port 4000)
+2. Web UI loads in Electron window
+3. You'll see "Launch → Новый захват" section
+4. Ready to start capturing!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🧪 QUICK TEST:
+
+Target: https://kort.up.railway.app
+Login: admin@kort.local
+Password: demo1234
+
+Steps:
+1. Launch Desktop App
+2. Sidebar → Authentication Flow
+3. Add 5 login steps (see QUICK_START.md)
+4. Click "Capture Login Session"
+5. Configure domain filters & crawl depth
+6. Click "Start Capture"
+7. Wait for results
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION:
+
+In project root:
+- QUICK_START.md — Usage examples
+- ADMIN_CAPTURE_IMPLEMENTATION.md — Technical details
+- REBUILD_INSTRUCTIONS.md — How to build from source
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 ADVANCED USERS:
+
+API is accessible at:
+- Local: http://localhost:4000
+- Endpoints: /api/capture, /api/auth-session, /api/scans
+- Storage: %APPDATA%\Frontend Capture Browser\storage\
+
+Build from source:
+- See REBUILD_INSTRUCTIONS.md
+- Run: npm run package:win (in apps/desktop/)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Ready to deploy!
+

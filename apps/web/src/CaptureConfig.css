@@ -1,0 +1,254 @@
+.capture-config {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+  background: #0d0d0d;
+  border-radius: 8px;
+}
+
+.config-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #141414;
+  border: 1px solid #222;
+  border-radius: 6px;
+}
+
+.config-section h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e0e0e0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.label-text {
+  color: #888;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: 'Courier New', monospace;
+}
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+  padding: 8px 10px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #4ade80;
+  background: #1a1a1a;
+}
+
+input[type="text"]::placeholder,
+textarea::placeholder {
+  color: #555;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.checkbox-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #aaa;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #4ade80;
+}
+
+.auth-section {
+  background: #1a2820;
+  border-color: #2d7a4a;
+}
+
+.auth-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.session-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: #0d3a1a;
+  border: 1px solid #4ade80;
+  border-radius: 4px;
+  color: #4ade80;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+}
+
+.clear-session-btn {
+  margin-left: auto;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid #4ade80;
+  border-radius: 3px;
+  color: #4ade80;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-session-btn:hover {
+  background: #4ade80;
+  color: #0d0d0d;
+}
+
+.login-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.login-step {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+select {
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.login-step input {
+  flex: 1;
+}
+
+.remove-step-btn {
+  padding: 6px 10px;
+  background: #3a1a1a;
+  border: 1px solid #7a2a2a;
+  border-radius: 3px;
+  color: #ff6b6b;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.remove-step-btn:hover {
+  background: #7a2a2a;
+  border-color: #ff6b6b;
+}
+
+.add-step-btn {
+  padding: 8px 12px;
+  background: #1a3a2a;
+  border: 1px solid #2d7a4a;
+  border-radius: 4px;
+  color: #4ade80;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-step-btn:hover {
+  background: #2d7a4a;
+  border-color: #4ade80;
+}
+
+.auth-capture-btn {
+  padding: 10px 16px;
+  background: #1a4a2e;
+  border: 1px solid #2d7a4a;
+  border-radius: 4px;
+  color: #4ade80;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-capture-btn:hover:not(:disabled) {
+  background: #2d7a4a;
+  border-color: #4ade80;
+}
+
+.auth-capture-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.config-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid #222;
+}
+
+.primary-button {
+  padding: 10px 20px;
+  background: #1a4a2e;
+  border: 1px solid #2d7a4a;
+  border-radius: 4px;
+  color: #4ade80;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #2d7a4a;
+  border-color: #4ade80;
+}
+
+.primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -1,30 +1,139 @@
+import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import {
+import { appendFileSync } from "node:fs";
+import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import type { ApiServerHandle } from "../../api/src/app.ts";
+import type { DesktopRuntimeInfo } from "./api-runtime.ts";
+import type { BrowserWindow as ElectronBrowserWindow, BrowserWindowConstructorOptions } from "electron";
+import type { ImportedSessionSnapshot } from "../../api/src/capture/types.ts";
+
+const DEFAULT_WINDOW_STATE = {
+  width: 1680,
+  height: 1040
+};
+const RUNTIME_LOG_FILE = path.join(os.tmpdir(), "frontend-capture-browser-runtime.log");
+const TRACE_LOG_FILE = path.join(os.tmpdir(), "frontend-capture-browser-trace.log");
+
+let apiHandle: ApiServerHandle | null = null;
+let mainWindow: ElectronBrowserWindow | null = null;
+let runtimeInfo: DesktopRuntimeInfo | null = null;
+let startEmbeddedApi:
+  | ((options: {
+      appVersion: string;
+      platform: string;
+      playwrightBrowsersPath?: string;
+      storageRoot: string;
+    }) => Promise<{
+      apiHandle: ApiServerHandle;
+      runtimeInfo: DesktopRuntimeInfo;
+    }>)
+  | null = null;
+
+function writeTrace(message: string): void {
+  if (process.env.FCB_RUNTIME_TRACE !== "1") {
+    return;
+  }
+
+  try {
+    appendFileSync(TRACE_LOG_FILE, `[${new Date().toISOString()}] ${message}\n`, "utf-8");
+  } catch {
+    // Ignore trace write failures during diagnostics.
+  }
+}
+
+function serializeError(error: unknown): string {
+  if (error instanceof Error) {
+    return `${error.name}: ${error.message}\n${error.stack || ""}`;
+  }
+
+  return String(error);
+}
+
+async function writeRuntimeLog(message: string): Promise<void> {
+  await appendFile(
+    RUNTIME_LOG_FILE,
+    `[${new Date().toISOString()}] ${message}\n`,
+    "utf-8"
+  ).catch(() => undefined);
+}
+
+function writeBootLog(message: string): void {
+  try {
+    appendFileSync(RUNTIME_LOG_FILE, `[${new Date().toISOString()}] boot ${message}\n`, "utf-8");
+  } catch {
+    // Ignore early boot logging failures.
+  }
+}
+
+process.on("uncaughtException", (error) => {
+  void writeRuntimeLog(`uncaughtException\n${serializeError(error)}`);
+});
+
+process.on("unhandledRejection", (reason) => {
+  void writeRuntimeLog(`unhandledRejection\n${serializeError(reason)}`);
+});
+
+writeBootLog("module:start");
+
+const electron = (() => {
+  try {
+    const loaded = require("electron") as typeof import("electron");
+    writeBootLog(`electron:keys=${Object.keys(loaded).slice(0, 12).join(",")}`);
+    return loaded;
+  } catch (error) {
+    writeBootLog(`electron:require-failed ${serializeError(error)}`);
+    throw error;
+  }
+})();
+
+const {
   app,
   BrowserWindow,
   dialog,
   ipcMain,
   shell,
-  type BrowserWindowConstructorOptions
-} from "electron";
-import { startApiServer, type ApiServerHandle } from "../../api/src/app.ts";
+  webContents
+} = electron;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DEFAULT_WINDOW_STATE = {
-  width: 1680,
-  height: 1040
-};
+if (typeof app?.whenReady !== "function" || typeof ipcMain?.handle !== "function") {
+  const reason = `invalid electron runtime app=${typeof app} ipcMain.handle=${typeof ipcMain?.handle}`;
+  writeBootLog(reason);
+  throw new Error(reason);
+}
 
-let apiHandle: ApiServerHandle | null = null;
-let runtimeInfo: {
-  apiBase: string;
-  appVersion: string;
-  platform: string;
-  storageRoot: string;
-} | null = null;
+app.setName("Frontend Capture Browser");
+if (process.platform === "win32") {
+  app.setAppUserModelId("com.fcb.desktop");
+}
+
+writeBootLog(`app:name=${app.getName()} packaged=${String(app.isPackaged)}`);
+
+function getStartEmbeddedApi() {
+  if (startEmbeddedApi) {
+    return startEmbeddedApi;
+  }
+
+  try {
+    const apiRuntime = require("./api-runtime.js") as {
+      startEmbeddedApi: (options: {
+        appVersion: string;
+        platform: string;
+        playwrightBrowsersPath?: string;
+        storageRoot: string;
+      }) => Promise<{
+        apiHandle: ApiServerHandle;
+        runtimeInfo: DesktopRuntimeInfo;
+      }>;
+    };
+
+    startEmbeddedApi = apiRuntime.startEmbeddedApi;
+    writeBootLog("api-runtime:loaded");
+    return startEmbeddedApi;
+  } catch (error) {
+    writeBootLog(`api-runtime:require-failed ${serializeError(error)}`);
+    throw error;
+  }
+}
 
 async function readWindowState(userDataPath: string): Promise<BrowserWindowConstructorOptions> {
   const stateFile = path.join(userDataPath, "window-state.json");
@@ -41,7 +150,7 @@ async function readWindowState(userDataPath: string): Promise<BrowserWindowConst
   }
 }
 
-async function saveWindowState(window: BrowserWindow): Promise<void> {
+async function saveWindowState(window: ElectronBrowserWindow): Promise<void> {
   const bounds = window.getBounds();
   const stateFile = path.join(app.getPath("userData"), "window-state.json");
   await mkdir(path.dirname(stateFile), { recursive: true });
@@ -51,29 +160,36 @@ async function saveWindowState(window: BrowserWindow): Promise<void> {
 async function ensureApiServer(): Promise<ApiServerHandle> {
   if (apiHandle) return apiHandle;
 
+  writeTrace("ensureApiServer:start");
   const storageRoot = path.join(app.getPath("userData"), "storage");
-  process.env.FCB_STORAGE_ROOT = storageRoot;
+  const playwrightBrowsersPath = app.isPackaged
+    ? path.join(process.resourcesPath, "ms-playwright")
+    : undefined;
 
-  apiHandle = await startApiServer({
-    host: "127.0.0.1",
-    port: 0
-  });
+  if (playwrightBrowsersPath) {
+    writeTrace(`ensureApiServer:playwright=${playwrightBrowsersPath}`);
+  }
 
-  runtimeInfo = {
-    apiBase: apiHandle.baseUrl,
+  const started = await getStartEmbeddedApi()({
     appVersion: app.getVersion(),
     platform: process.platform,
+    playwrightBrowsersPath,
     storageRoot
-  };
+  });
+
+  apiHandle = started.apiHandle;
+  runtimeInfo = started.runtimeInfo;
+  writeTrace(`ensureApiServer:ready:${apiHandle.baseUrl}`);
 
   return apiHandle;
 }
 
-async function createMainWindow(): Promise<BrowserWindow> {
+async function createMainWindow(): Promise<ElectronBrowserWindow> {
+  writeTrace("createMainWindow:start");
   await ensureApiServer();
   const state = await readWindowState(app.getPath("userData"));
 
-  const window = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: Number(state.width) || DEFAULT_WINDOW_STATE.width,
     height: Number(state.height) || DEFAULT_WINDOW_STATE.height,
     x: typeof state.x === "number" ? state.x : undefined,
@@ -84,7 +200,7 @@ async function createMainWindow(): Promise<BrowserWindow> {
     title: "Frontend Capture Browser",
     autoHideMenuBar: true,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
@@ -93,18 +209,26 @@ async function createMainWindow(): Promise<BrowserWindow> {
   });
 
   const rendererPath = path.join(__dirname, "renderer", "index.html");
-  await window.loadFile(rendererPath);
+  writeTrace(`createMainWindow:loadFile:${rendererPath}`);
+  await mainWindow.loadFile(rendererPath);
+  writeTrace("createMainWindow:loaded");
 
-  window.on("close", () => {
-    void saveWindowState(window);
+  mainWindow.on("close", () => {
+    if (mainWindow) {
+      void saveWindowState(mainWindow);
+    }
   });
 
-  window.webContents.setWindowOpenHandler(({ url }) => {
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url);
     return { action: "deny" };
   });
 
-  return window;
+  return mainWindow;
 }
 
 ipcMain.handle("desktop:get-runtime-info", async () => {
@@ -146,7 +270,58 @@ ipcMain.handle(
   }
 );
 
+ipcMain.handle(
+  "desktop:extract-tab-session",
+  async (
+    _event,
+    options: {
+      webContentsId: number;
+      sourceUrl: string;
+    }
+  ): Promise<ImportedSessionSnapshot> => {
+    const contents = webContents.fromId(options.webContentsId);
+
+    if (!contents) {
+      throw new Error("Active browser tab was not found");
+    }
+
+    const sessionCookies = await contents.session.cookies.get({});
+    const sourceHost = new URL(options.sourceUrl).hostname;
+    const cookies = sessionCookies
+      .filter((cookie) => {
+        const domain = cookie.domain.replace(/^\./, "");
+        return sourceHost === domain || sourceHost.endsWith(`.${domain}`);
+      })
+      .map((cookie) => ({
+        name: cookie.name,
+        value: cookie.value,
+        domain: cookie.domain,
+        path: cookie.path,
+        expires: typeof cookie.expirationDate === "number" ? cookie.expirationDate : undefined,
+        httpOnly: cookie.httpOnly,
+        secure: cookie.secure,
+        sameSite: cookie.sameSite === "strict"
+          ? "Strict"
+          : cookie.sameSite === "no_restriction"
+            ? "None"
+            : cookie.sameSite === "lax"
+              ? "Lax"
+              : undefined
+      }));
+
+    const userAgent = contents.getUserAgent();
+
+    return {
+      sourceUrl: options.sourceUrl,
+      userAgent,
+      cookies,
+      storages: []
+    };
+  }
+);
+
 app.whenReady().then(async () => {
+  writeTrace("app.whenReady");
   await createMainWindow();
 
   app.on("activate", async () => {
@@ -154,6 +329,9 @@ app.whenReady().then(async () => {
       await createMainWindow();
     }
   });
+}).catch(async (error) => {
+  await writeRuntimeLog(`app.whenReady failed\n${serializeError(error)}`);
+  app.quit();
 });
 
 app.on("before-quit", async () => {

@@ -4,11 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @fcb/desktop dev",
+    "dev": "pnpm --filter ./apps/desktop dev",
     "dev:api": "pnpm --filter @fcb/api dev",
-    "dev:desktop": "pnpm --filter @fcb/desktop dev",
+    "dev:desktop": "pnpm --filter ./apps/desktop dev",
     "dev:web": "pnpm --filter @fcb/web dev",
-    "build": "pnpm --filter @fcb/api build && pnpm --filter @fcb/web build && pnpm --filter @fcb/desktop build"
+    "build": "pnpm --filter @fcb/api build && pnpm --filter @fcb/web build && pnpm --filter ./apps/desktop build"
   },
   "packageManager": "pnpm@9.0.0",
   "workspaces": [

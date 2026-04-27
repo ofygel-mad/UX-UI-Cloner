@@ -10,6 +10,8 @@ import type {
   CapturedResource,
   CaptureOptions,
   CaptureResult,
+  ImportedCookie,
+  ImportedStorageBucket,
   NetworkEntry
 } from "./types.js";
 import { ensureDir, writeBuffer, writeJson, writeText } from "../utils/fs.js";
@@ -88,6 +90,76 @@ function isExternal(baseUrl: string, resourceUrl: string): boolean {
   return new URL(baseUrl).hostname !== new URL(resourceUrl).hostname;
 }
 
+function matchesDomainFilter(
+  resourceUrl: string,
+  domainFilter?: { include?: string[]; exclude?: string[] }
+): boolean {
+  if (!domainFilter) return true;
+
+  try {
+    const resourceHostname = new URL(resourceUrl).hostname || "";
+
+    // If include list exists, resource must match one of the includes
+    if (domainFilter.include && domainFilter.include.length > 0) {
+      const matchesInclude = domainFilter.include.some((domain) => {
+        const normalizedDomain = domain.toLowerCase();
+        return (
+          resourceHostname === normalizedDomain ||
+          resourceHostname.endsWith(`.${normalizedDomain}`)
+        );
+      });
+      if (!matchesInclude) return false;
+    }
+
+    // If exclude list exists, resource must not match any excludes
+    if (domainFilter.exclude && domainFilter.exclude.length > 0) {
+      const matchesExclude = domainFilter.exclude.some((domain) => {
+        const normalizedDomain = domain.toLowerCase();
+        return (
+          resourceHostname === normalizedDomain ||
+          resourceHostname.endsWith(`.${normalizedDomain}`) ||
+          resourceHostname.match(new RegExp(normalizedDomain.replace(/\*/g, ".*")))
+        );
+      });
+      if (matchesExclude) return false;
+    }
+
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+function sanitizeImportedCookies(cookies: ImportedCookie[]): ImportedCookie[] {
+  return cookies.filter((cookie) => Boolean(cookie.name) && Boolean(cookie.domain) && Boolean(cookie.path));
+}
+
+function buildStorageInitScript(storages: ImportedStorageBucket[]): string {
+  return `
+    (() => {
+      const buckets = ${JSON.stringify(storages)};
+      const bucket = buckets.find((item) => item.origin === window.location.origin);
+      if (!bucket) return;
+
+      for (const [key, value] of Object.entries(bucket.localStorage || {})) {
+        try {
+          window.localStorage.setItem(key, value);
+        } catch {
+          // Ignore blocked localStorage writes.
+        }
+      }
+
+      for (const [key, value] of Object.entries(bucket.sessionStorage || {})) {
+        try {
+          window.sessionStorage.setItem(key, value);
+        } catch {
+          // Ignore blocked sessionStorage writes.
+        }
+      }
+    })();
+  `;
+}
+
 export async function captureSite(options: CaptureOptions): Promise<CaptureResult> {
   const url = normalizeUrl(options.url);
   const scanId = `scan_${Date.now()}_${nanoid(8)}`;
@@ -105,6 +177,8 @@ export async function captureSite(options: CaptureOptions): Promise<CaptureResul
   const seenResponseHashes = new Set<string>();
   let mainPageHeaders: Record<string, string> = {};
   let mainPageHeadersCaptured = false;
+  const importedCookies = sanitizeImportedCookies(options.session?.cookies ?? []);
+  const importedStorages = (options.session?.storages ?? []).filter((bucket) => Boolean(bucket.origin));
 
   const browser = await chromium.launch({
     headless: true
@@ -115,9 +189,18 @@ export async function captureSite(options: CaptureOptions): Promise<CaptureResul
       viewport: { width: 1440, height: 900 },
       ignoreHTTPSErrors: true,
       userAgent:
+        options.session?.userAgent ||
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36 FrontendCaptureBrowser/0.1",
       acceptDownloads: false
     });
+
+    if (importedCookies.length > 0) {
+      await context.addCookies(importedCookies);
+    }
+
+    if (importedStorages.length > 0) {
+      await context.addInitScript(buildStorageInitScript(importedStorages));
+    }
 
     const page = await context.newPage();
 
@@ -163,6 +246,11 @@ export async function captureSite(options: CaptureOptions): Promise<CaptureResul
         }
 
         if (!body) return;
+
+        // Check domain filter
+        if (!matchesDomainFilter(responseUrl, options.domainFilter)) {
+          return;
+        }
 
         const kind = classifyResource(responseUrl, mime);
         const digest = sha256(body);
@@ -269,7 +357,13 @@ export async function captureSite(options: CaptureOptions): Promise<CaptureResul
     }).catch(() => undefined);
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    const interactions = await runSafeInteractions(page, options.maxActionsPerPage);
+    const interactions = await runSafeInteractions(
+      page,
+      options.maxActionsPerPage,
+      options.pathExclusions,
+      options.adminMode,
+      options.crawlDepth
+    );
 
     await page.waitForTimeout(1200);
 

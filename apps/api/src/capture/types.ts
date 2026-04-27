@@ -45,10 +45,44 @@ export type InteractionLog = {
   newRequestsCount?: number;
 };
 
+export type DomainFilter = {
+  include?: string[];
+  exclude?: string[];
+};
+
 export type CaptureOptions = {
   url: string;
   maxActionsPerPage: number;
   timeoutMs: number;
+  session?: ImportedSessionSnapshot;
+  domainFilter?: DomainFilter;
+  pathExclusions?: string[];
+  crawlDepth?: number;
+  adminMode?: boolean;
+};
+
+export type ImportedCookie = {
+  name: string;
+  value: string;
+  domain: string;
+  path: string;
+  expires?: number;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: "Strict" | "Lax" | "None";
+};
+
+export type ImportedStorageBucket = {
+  origin: string;
+  localStorage: Record<string, string>;
+  sessionStorage: Record<string, string>;
+};
+
+export type ImportedSessionSnapshot = {
+  sourceUrl: string;
+  userAgent?: string;
+  cookies: ImportedCookie[];
+  storages: ImportedStorageBucket[];
 };
 
 // ─── Analysis types ───────────────────────────────────────────────────────────

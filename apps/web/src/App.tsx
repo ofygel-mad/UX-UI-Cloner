@@ -6,6 +6,7 @@ import cssLang from "highlight.js/lib/languages/css";
 import xml from "highlight.js/lib/languages/xml";
 import jsonLang from "highlight.js/lib/languages/json";
 import "highlight.js/styles/github-dark.min.css";
+import { CaptureConfig } from "./CaptureConfig.js";
 import "./App.css";
 
 hljs.registerLanguage("javascript", javascript);
@@ -681,15 +682,22 @@ export default function App() {
     }
   }
 
-  async function runCapture() {
+  async function runCapture(config?: any) {
     setSubmitting(true);
     setError(null);
-    setPreviewUrl(url);
+
+    const captureConfig = config || {
+      url,
+      maxActionsPerPage: maxActions,
+      timeoutMs
+    };
+
+    setPreviewUrl(captureConfig.url);
     try {
       const job = await apiRequest<JobResponse>("/api/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, maxActionsPerPage: maxActions, timeoutMs }),
+        body: JSON.stringify(captureConfig),
       });
       setActiveJob(job);
     } catch (e) {
@@ -849,31 +857,7 @@ export default function App() {
             </button>
           </div>
 
-          <label>
-            URL цели
-            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com" />
-          </label>
-
-          <div className="triple-grid">
-            <label>
-              Safe actions
-              <input type="number" min={0} max={50} value={maxActions}
-                onChange={(e) => setMaxActions(Number(e.target.value))} />
-            </label>
-            <label>
-              Timeout (ms)
-              <input type="number" min={5000} max={120000} step={1000} value={timeoutMs}
-                onChange={(e) => setTimeoutMs(Number(e.target.value))} />
-            </label>
-            <label>
-              Preview
-              <input value={previewUrl} onChange={(e) => setPreviewUrl(e.target.value)} />
-            </label>
-          </div>
-
-          <button type="button" className="primary-button" onClick={runCapture} disabled={submitting}>
-            {submitting ? "Создание задания..." : "Запустить анализ"}
-          </button>
+          <CaptureConfig onCapture={runCapture} />
 
           {activeJob ? (
             <div className="job-card">

@@ -1,24 +1,25 @@
 {
-  "name": "@fcb/desktop",
+  "name": "frontend-capture-browser",
   "private": true,
   "version": "0.1.0",
   "description": "Native desktop shell for the Frontend Capture Browser toolchain",
   "author": "OpenAI Codex",
-  "type": "module",
-  "main": "dist/main.js",
+  "main": "dist/main.cjs",
   "scripts": {
-    "dev": "node ./scripts/build-desktop.mjs && electron dist/main.js",
+    "dev": "node ./scripts/build-desktop.mjs && electron .",
     "build": "node ./scripts/build-desktop.mjs",
-    "package:dir": "pnpm run build && electron-builder --dir",
-    "package:win": "pnpm run build && electron-builder --win portable",
-    "start": "electron dist/main.js"
+    "package:dir": "node ./scripts/package-desktop.mjs dir",
+    "package:win": "node ./scripts/package-desktop.mjs win",
+    "package:portable": "node ./scripts/package-desktop.mjs portable",
+    "start": "electron ."
   },
   "dependencies": {
-    "playwright": "latest"
+    "playwright": "latest",
+    "prettier": "latest"
   },
   "devDependencies": {
     "@types/node": "latest",
-    "electron": "latest",
+    "electron": "30.5.1",
     "electron-builder": "latest",
     "esbuild": "latest",
     "typescript": "latest"
@@ -26,20 +27,42 @@
   "build": {
     "appId": "com.fcb.desktop",
     "productName": "Frontend Capture Browser",
+    "executableName": "Frontend Capture Browser",
+    "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
     "files": [
       "dist/**/*",
+      "!dist/ms-playwright{,/**/*}",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "dist/ms-playwright",
+        "to": "ms-playwright",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "extraMetadata": {
-      "main": "dist/main.js"
+      "main": "dist/main.cjs",
+      "name": "frontend-capture-browser",
+      "productName": "Frontend Capture Browser"
     },
     "directories": {
       "output": "release"
     },
     "win": {
       "target": [
-        "portable"
+        "nsis"
       ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
     }
   }
 }
